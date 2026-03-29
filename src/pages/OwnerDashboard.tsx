@@ -36,6 +36,21 @@ const OwnerDashboard = () => {
 
   useEffect(() => { checkAuth(); }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('owner-hostels-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hostels', filter: `owner_id=eq.${userId}` },
+        () => { fetchHostels(userId); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
+
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { navigate('/owner'); return; }

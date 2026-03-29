@@ -24,6 +24,17 @@ const Index = () => {
 
   useEffect(() => {
     fetchHostels();
+
+    const channel = supabase
+      .channel('listing-hostels-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hostels' },
+        () => { fetchHostels(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchHostels = async () => {

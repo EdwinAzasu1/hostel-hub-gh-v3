@@ -34,7 +34,21 @@ const AdminDashboard = () => {
   const [hostelToDelete, setHostelToDelete] = useState<string | null>(null);
 
   useEffect(() => { checkAuth(); }, [navigate]);
-  useEffect(() => { fetchHostels(); }, []);
+
+  useEffect(() => {
+    fetchHostels();
+
+    const channel = supabase
+      .channel('admin-hostels-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hostels' },
+        () => { fetchHostels(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
